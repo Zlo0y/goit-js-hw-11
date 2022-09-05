@@ -10,7 +10,7 @@ async function uploadPhoto(queryToFind, pageData, perPage) {
         throw getData.status;
         
       }
-    //   totalHitsMax = getData.data.totalHits;
+
       
       const arrayFromData = getData.data;
       
