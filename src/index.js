@@ -1,93 +1,60 @@
-import './sass/main.scss';
+import './css/styles.css';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
-import FetchPixabayAPI from './js/fetch-pixabay';
-import ButtonsAPI from './js/buttons-api';
-import galleryMarkup from './teamplates/gallery-markup.hbs';
+import {createMarkup} from './js/createMarkup';
+import {uploadPhoto} from './js/getData';
 
-const REQUEST_LINK = 'https://pixabay.com/api/';
-const KEY = '27389649-f5df395754432ead8290902de';
-const form = document.querySelector('.search-form');
+let queryToFind = '';
+let pageData = 1;
+let perPage = 40;
+let totalHitsMax = '';
+let totalHits = perPage;
+
+const form = document.querySelector('#search-form');
 const gallery = document.querySelector('.gallery');
-const btnLoadMore = document.querySelector('.load-more');
+const loadMore = document.querySelector('.load-more');
 
-const pixabay = new FetchPixabayAPI(KEY, REQUEST_LINK);
-const buttons = new ButtonsAPI('span', 'i');
-const galleryInit = new SimpleLightbox('.gallery a');
+loadMore.style.display = 'none';
 
-async function onSubmit(e) {
+loadMore.addEventListener('click', async () => {
+  pageData += 1;
+  totalHits += perPage;
+
+  try {
+    const uploadPhotoDone = await uploadPhoto(queryToFind, pageData, perPage);
+    const uploadPhotoDoneArray = uploadPhotoDone.hits;
+    totalHitsMax = uploadPhotoDone.totalHits;
+
+    createMarkup(uploadPhotoDoneArray);
+    
+    if (totalHits > totalHitsMax){
+      throw "We're sorry, but you've reached the end of search results.";
+    } 
+    
+  } catch (error) {
+    Notify.info("We're sorry, but you've reached the end of search results.");
+    loadMore.style.display = 'none';
+    }
+})
+
+form.addEventListener('input', textFromInput);
+
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    if (!btnLoadMore.classList.contains('d-none')) {
-        btnLoadMore.classList.add('d-none');
-    }
-
+    loadMore.style.display = 'none';
+    pageData = 1;
     gallery.innerHTML = '';
+    
+    const uploadPhotoDone = await uploadPhoto(queryToFind, pageData, perPage);
+    const uploadPhotoDoneArray = uploadPhotoDone.hits;
+    totalHitsMax = uploadPhotoDone.totalHits;
+    
+    createMarkup(uploadPhotoDoneArray);
+    loadMore.style.display = 'block';
+    
+})
 
-    const { elements: { searchQuery: { value } } } = e.target;
 
-    if (value === '' || value === ' ') {
-        Notify.failure("Input search word or sentence");
-        return
-    }
-
-    pixabay.searchTerm = value;
-
-    const btn = e.target.elements.searchButton;
-    buttons.toggleSpinner(btn);
-
-    pixabay.resetPage();
-
-    await fetchAndRender();
-
-    const totalHits = pixabay.showTotalHits();
-    if (totalHits) {
-        Notify.success(`Hooray! We found ${totalHits} images.`);
-    }
-
-    buttons.toggleSpinner(btn);
-
-    btnLoadMore.classList.toggle('d-none');
+function textFromInput(text) {
+  queryToFind = text.target.value;    
 }
-
-async function onLoadMore(e) {
-    buttons.toggleSpinner(e.target);
-
-    await fetchAndRender();
-    smoothScroll();
-
-    buttons.toggleSpinner(e.target);
-}
-
-async function fetchAndRender() {
-    const {theGallery, isTheGallery, isTheGalleryOver} = await pixabay.quary();
-
-    if (!isTheGallery) {
-        Notify.failure("Sorry, there are no images matching your search query. Please try again.");
-        btnLoadMore.classList.remove('d-none');
-        return;
-    }
-
-    if (isTheGalleryOver) {
-        Notify.failure("We're sorry, but you've reached the end of search results.");
-        btnLoadMore.classList.toggle('d-none');
-    }
-
-    gallery.insertAdjacentHTML('beforeend', galleryMarkup(theGallery));
-        
-    galleryInit.refresh();
-}
-
-function smoothScroll() {
-    const { height: cardHeight } = gallery
-        .firstElementChild.getBoundingClientRect();
-
-    window.scrollBy({
-        top: cardHeight * 2,
-        behavior: "smooth",
-});
-}
-
-form.addEventListener('submit', onSubmit);
-btnLoadMore.addEventListener('click', onLoadMore);
