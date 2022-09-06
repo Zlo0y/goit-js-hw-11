@@ -9,7 +9,7 @@ let pageData = 1;
 let perPage = 40;
 let totalHitsMax = '';
 let totalHits = perPage;
-
+  
 const form = document.querySelector('#search-form');
 const gallery = document.querySelector('.gallery');
 const loadMore = document.querySelector('.load-more');
@@ -24,7 +24,6 @@ loadMore.addEventListener('click', async () => {
     const uploadPhotoDone = await uploadPhoto(queryToFind, pageData, perPage);
     const uploadPhotoDoneArray = uploadPhotoDone.hits;
     totalHitsMax = uploadPhotoDone.totalHits;
-
     createMarkup(uploadPhotoDoneArray);
     
     if (totalHits > totalHitsMax){
@@ -48,9 +47,13 @@ form.addEventListener('submit', async (e) => {
     const uploadPhotoDone = await uploadPhoto(queryToFind, pageData, perPage);
     const uploadPhotoDoneArray = uploadPhotoDone.hits;
     totalHitsMax = uploadPhotoDone.totalHits;
-    
-    createMarkup(uploadPhotoDoneArray);
+  
+  if (totalHitsMax < perPage) {
+    loadMore.style.display = 'none';
+  } else {
     loadMore.style.display = 'block';
+  }
+    createMarkup(uploadPhotoDoneArray);
     
 })
 

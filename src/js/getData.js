@@ -8,22 +8,12 @@ async function uploadPhoto(queryToFind, pageData, perPage) {
   
       if (getData.data.hits.length === 0) {
         throw getData.status;
-        
       }
 
-      
-      const arrayFromData = getData.data;
-      
-      
-     return arrayFromData;
-      
-    
+      return getData.data;
      } catch (error) {
-      
       Notify.failure("Sorry, there are no images matching your search query. Please try again.");
-      
      }
   }
-
 
   export {uploadPhoto}
